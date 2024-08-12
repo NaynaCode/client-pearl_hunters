@@ -80,7 +80,7 @@ export class MainMenu extends Scene {
                     startButton.setVisible(false);
 
                     // Make a POST request to the server when starting the game
-                    axios.post('http://localhost:3000/api/players', { username })
+                    axios.post('https://pearl-hunters-server.vercel.app/api/players', { username })
                         .then(response => {
                             console.log(response.data);
                             alert(response.data.message); // Display welcome message
@@ -134,7 +134,7 @@ export class MainMenu extends Scene {
             console.log('Button clicked'); // Debugging log
             
             // Send username to server and receive welcome message
-            axios.post('http://localhost:3000/api/players', { username })
+            axios.post('https://pearl-hunters-server.vercel.app/api/players', { username })
                 .then(response => {
                     console.log(response.data);
                     alert(response.data.message); // Display welcome message
