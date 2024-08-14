@@ -37,13 +37,6 @@ export class MainMenu extends Scene {
                        style="font-size: 24px; padding: 10px; width: 200px; text-align: center;">
             `);
 
-            // Check if the input field is properly created
-            const usernameField = usernameInput.getChildByID('username');
-            if (!usernameField) {
-                console.error('Username input field could not be found.');
-                return; // Exit if the input field is not found
-            }
-
             // Create a button to start the game for new users
             const startButton = this.add.dom(600, 400).createFromHTML(`
                 <style>
@@ -69,34 +62,27 @@ export class MainMenu extends Scene {
             // Add a click event listener to the button
             startButton.addListener('click');
             startButton.on('click', () => {
-                console.log('Button clicked'); // Debugging log
-                // Get the entered username from the input field
-                const username = usernameField.value.trim();
+                const username = usernameInput.getChildByID('username').value.trim();
 
                 if (username) {
-                    // Store the username in local storage
-                    localStorage.setItem('playerUsername', username);
-                    // Disable the button to prevent multiple clicks
-                    startButton.setVisible(false);
-
-                    // Make a POST request to the server when starting the game
-                    axios.post('https://pearl-hunters-server.vercel.app/api/players', { username })
+                    // Make a POST request to the server to add the username
+                    axios.post('http://localhost:3000/users/register', { username })
                         .then(response => {
-                            console.log(response.data);
-                            alert(response.data.message); // Display welcome message
+                            // Store the username in local storage upon successful registration
+                            localStorage.setItem('playerUsername', username);
+                            alert(response.data.message);
+                            this.scene.start('Game');
+                            usernameInput.destroy();
+                            startButton.destroy();
                         })
                         .catch(error => {
-                            console.error('Error sending data:', error);
-                            alert('Failed to connect to server. Please try again later.');
+                            if (error.response && error.response.status === 400) {
+                                alert('Username already exists. Please choose a different one.');
+                            } else {
+                                alert('Failed to connect to server. Please try again later.');
+                            }
                         });
-
-                    // Start the Game scene
-                    this.scene.start('Game');
-                    // Clean up the DOM elements
-                    usernameInput.destroy();
-                    startButton.destroy();
                 } else {
-                    // Show an error if the username is empty
                     alert('Please enter a username.');
                 }
             });
@@ -105,49 +91,15 @@ export class MainMenu extends Scene {
         EventBus.emit('current-scene-ready', this);
     }
 
-    createStartButton(username) {
-        // Create a "Start Game" button
-        const startButton = this.add.dom(600, 400).createFromHTML(`
-            <style>
-                #startButton {
-                    font-size: 28px;
-                    color: #000000; /* Initial text color */
-                    background-color: #FFFFFF; /* Initial background color */
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 10px; /* Rounded corners */
-                    cursor: pointer;
-                    transition: all 0.3s ease; /* Smooth transition for hover */
-                }
-
-                #startButton:hover {
-                    color: #FFFFFF; /* Text color on hover */
-                    background-color: #f38b1d; /* Background color on hover */
-                }
-            </style>
-            <button id="startButton">Start Game</button>
-        `);
-
-        // Add a click event listener to the button
-        startButton.addListener('click');
-        startButton.on('click', () => {
-            console.log('Button clicked'); // Debugging log
-            
-            // Send username to server and receive welcome message
-            axios.post('https://pearl-hunters-server.vercel.app/api/players', { username })
-                .then(response => {
-                    console.log(response.data);
-                    alert(response.data.message); // Display welcome message
-                })
-                .catch(error => {
-                    console.error('Error sending data:', error);
-                    alert('Failed to connect to server. Please try again later.');
-                });
-
-            // Start the Game scene
-            this.scene.start('Game');
-            // Clean up the DOM elements
-            startButton.destroy();
-        });
+    createStartButton(storedUsername) {
+        // Send the stored username to the server to check its status
+        axios.post('http://localhost:3000/users/login', { username: storedUsername })
+            .then(response => {
+                alert(response.data.message); // Display the welcome message
+                this.scene.start('Game');
+            })
+            .catch(error => {
+                alert('Failed to connect to server. Please try again later.');
+            });
     }
 }
