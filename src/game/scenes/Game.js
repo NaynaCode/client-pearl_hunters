@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { EventBus } from '../EventBus';
 import io from 'socket.io-client';
+import axios from 'axios';
 
 export class Game extends Scene {
     constructor() {
@@ -8,16 +9,19 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('http://localhost:3000'); // Connect to the server
+        const socket = io('https://pearl-hunters-server.vercel.app'); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
 
+        this.add.image(1070, 130, 'leaderboard').setScale(1.5);
+
         // Retrieve the username from local storage
         const username = localStorage.getItem('playerUsername');
+        socket.emit('requestLeaderboard');
 
         // Display the username at the top-left corner of the screen
-        this.add.text(950, 30, `Player: ${username}`, {
+        this.add.text(30, 35, `Player: ${username}`, {
             fontSize: '24px',
             fill: '#FFF',
             align: 'left'
@@ -52,10 +56,10 @@ export class Game extends Scene {
         const jeweller = this.physics.add.image(760, 325, 'jeweller').setCircle(50, 0, 40).setImmovable(true);
         const pearlHunter = this.physics.add.image(857, 495, 'pearlHunter').setCircle(50, 30, 50).setImmovable(true);
 
-        this.physics.add.image(50, 50, 'shell');
-        this.physics.add.image(50, 80, 'pearl');
-        this.physics.add.image(50, 110, 'necklace');
-        this.physics.add.image(50, 140, 'coin');
+        this.physics.add.image(40, 80, 'shell');
+        this.physics.add.image(40, 110, 'pearl');
+        this.physics.add.image(40, 140, 'necklace');
+        this.physics.add.image(40, 170, 'coin');
 
         // Create a group for seashells
         const seashells = this.physics.add.group({
@@ -72,19 +76,39 @@ export class Game extends Scene {
         });
 
         // **Enhancement: seaShells System**
-        let seaShells = 0;
-        let pearls = 0;
-        let necklaces = 0;
-        let coins = 0;
-        const seaShellsText = this.add.text(80, 40, '0/10', { fontSize: '24px', fill: '#FFF' });
-        const pearlsText = this.add.text(80, 70, '0', { fontSize: '24px', fill: '#FFF' });
-        const necklacesText = this.add.text(80, 100, '0', { fontSize: '24px', fill: '#FFF' });
-        const coinsText = this.add.text(80, 130, '0', { fontSize: '24px', fill: '#FFF' });
+        let seaShells;
+        let pearls;
+        let necklaces;
+        let coins;
+        let seaShellsText, pearlsText, necklacesText, coinsText;
+        
+        axios.post('https://pearl-hunters-server.vercel.app/userData', { username })
+            .then(response => {
+                // Extract the user data from the response
+                const userData = response.data.user;
+                seaShells = userData.shells;
+                pearls = userData.pearls;
+                necklaces = userData.necklaces;
+                coins = userData.coins;
+        
+                // Initialize the text objects with the fetched data
+                seaShellsText = this.add.text(70, 70, seaShells + '/10', { fontSize: '24px', fill: '#FFF' });
+                pearlsText = this.add.text(70, 100, pearls, { fontSize: '24px', fill: '#FFF' });
+                necklacesText = this.add.text(70, 130, necklaces, { fontSize: '24px', fill: '#FFF' });
+                coinsText = this.add.text(70, 160, coins, { fontSize: '24px', fill: '#FFF' });
+            })
+            .catch(error => {
+                alert('Error fetching user data: ' + error);
+            });
+        
 
-        const updateseaShells = () => {
+        const updateSeaShells = () => {
             if (seaShells<10) {
                 seaShells += 1; // Or any value you want
                 seaShellsText.setText(seaShells + '/10');
+
+                const username = localStorage.getItem('playerUsername');
+                socket.emit('updateShells', { username, shells: seaShells});
             }
         };
 
@@ -93,34 +117,73 @@ export class Game extends Scene {
             pearlsText.setText(pearls);
             seaShells = 0;
             seaShellsText.setText(seaShells + '/10'); 
+
+            const username = localStorage.getItem('playerUsername');
+            socket.emit('updatePearls', { username, shells: seaShells, pearls});
         };
 
         const updateNecklaces = () => {
-            necklaces += Math.floor(pearls / 10); 
+            necklaces += Math.floor(pearls / 2); 
             necklacesText.setText(necklaces);
-            pearls = pearls % 10; 
+            pearls = pearls % 2; 
             pearlsText.setText(pearls); 
+
+            const username = localStorage.getItem('playerUsername');
+            socket.emit('updateNecklaces', { username, pearls, necklaces});
         };
         
         const updateCoins = () => {
             if (necklaces > 1) {
-                coins += 100 * necklaces;
+                coins += 200;
                 coinsText.setText(coins);
                 necklaces -= 2;
                 necklacesText.setText(necklaces);
+
+                const username = localStorage.getItem('playerUsername');
+                socket.emit('updateCoins', { username, necklaces, coins});
+                socket.emit('requestLeaderboard');
+
+        // Listen for the leaderboard data from the server
+        
             }    
         }
 
+        const leaderboardText = [];
+
+        socket.on('leaderboardData', (response) => {
+            if (response.error) {
+                alert('Error fetching leaderboard data: ' + response.error);
+            } else {
+                const users = response.users;
+
+                // Clear the previous leaderboard display
+                leaderboardText.forEach(text => text.destroy());
+                leaderboardText.length = 0; // Reset the array
+
+                this.add.text(1000, 30, 'Leaderboard:', { fontSize: '20px', fill: '#000' });
+                this.add.text(1000, 50, '(user - coins)', { fontSize: '16px', fill: '#000' });
+
+                users.forEach((user, index) => {
+                    const rank = index + 1;
+                    const userText = `${rank}. ${user.username} - ${user.coins}`;
+                    const text = this.add.text(1000, 90 + index * 30, userText, { fontSize: '16px', fill: '#000' });
+                    leaderboardText.push(text);
+                });
+            }
+        });
+
         // Function to spawn a seashell at a random position
-        const spawnSeashell = () => {
+        function spawnSeashell() {
             const h = 500; // X center of the oval
             const k = 680; // Y center of the oval
             const a = 250; // Horizontal radius (semi-major axis)
             const b = 50; // Vertical radius (semi-minor axis)
 
+
             // Generate a random angle and radius
             const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
             const radius = Math.sqrt(Phaser.Math.FloatBetween(0, 1)); // Normalize distance
+
 
             // Calculate the position within the oval
             const x = h + radius * a * Math.cos(angle);
@@ -130,8 +193,8 @@ export class Game extends Scene {
             const seashell = seashells.getFirstDead(false, x, y);
 
             if (seashell) {
-                if (collisionCounter<1)
-                    collisionCounter=1;
+                if (collisionCounter < 1)
+                    collisionCounter = 1;
 
                 seashell.setActive(true);
                 seashell.setVisible(true);
@@ -145,9 +208,10 @@ export class Game extends Scene {
                 seashell.setPosition(x, y);
                 seashell.setCircle(10); // Set circle physics
 
+
                 // You can also add any other properties or animations here if needed
             }
-        };
+        }
 
         // Timer event to spawn seashells at random intervals
         this.time.addEvent({
@@ -207,7 +271,7 @@ export class Game extends Scene {
             }
             // **Enhancement: Update seaShells**
             if (collisionCounter>0)
-                updateseaShells();
+                updateSeaShells();
             collisionCounter = 0;
         });
 
@@ -224,7 +288,7 @@ export class Game extends Scene {
         }); 
 
         this.input.on('pointerdown', (pointer) => {
-            //if (isMoving) return;  Prevent new movement if already moving
+            if (isMoving) return;  //Prevent new movement if already moving
             const SPEED = 200; // Speed in pixels per second
 
             // Calculate the distance between the player and the pointer
@@ -239,8 +303,6 @@ export class Game extends Scene {
             } else if (pointer.x > player.x) {
                 player.anims.play('right', true);
             }
-
-            socket.emit('playerMovement', { x: player.x, y: player.y });
 
             // Tween the player's position to the pointer's position
             this.tweens.add({
@@ -261,6 +323,9 @@ export class Game extends Scene {
             isMoving = true; // Mark the player as moving
         });
 
+        
+            
+
         // Handle player movement updates from the server
     socket.on('playerMovement', (data) => {
         console.log('Player movement from server:', data);
@@ -269,8 +334,6 @@ export class Game extends Scene {
             console.error('Players group is not initialized');
             return;
         }
-
-        
 
         let otherPlayer = this.players.getChildren().find(p => p.id === data.id);
         if (otherPlayer) {

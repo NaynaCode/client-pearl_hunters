@@ -48,6 +48,7 @@ export class Preloader extends Scene
         this.load.image('necklace', 'necklace.png');
         this.load.image('coin', 'coin.png');
         this.load.image('blured', 'bgBlur.png');
+        this.load.image('leaderboard', 'leaderboard.png');
     }
 
     create ()
