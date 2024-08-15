@@ -9,12 +9,7 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://pearl-hunters-server.vercel.app', {
-            withCredentials: true, // Include cookies if needed
-            extraHeaders: {
-                "Authorization": "Bearer YOUR_AUTH_TOKEN" // If using authorization
-            }
-        });// Connect to the server
+        const socket = io('https://pearl-hunters-server.vercel.app'); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
