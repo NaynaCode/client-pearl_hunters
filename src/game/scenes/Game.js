@@ -9,7 +9,7 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://pearl-hunters-server.vercel.app'); // Connect to the server
+        const socket = io(process.env.SERVER_KEY); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
@@ -82,7 +82,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post('https://pearl-hunters-server.vercel.app/userData', { username })
+        axios.post('http://localhost:3000/userData', { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
