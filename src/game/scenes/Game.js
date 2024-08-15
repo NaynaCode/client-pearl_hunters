@@ -82,7 +82,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post('http://localhost:3000/userData', { username })
+        axios.post(`${process.env.SERVER_URL}/userData`, { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
