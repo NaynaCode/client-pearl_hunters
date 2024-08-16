@@ -54,7 +54,7 @@ export class Game extends Scene {
 
         const market = this.physics.add.image(323, 360, 'market').setCircle(30, 20, 40).setImmovable(true);
         const jeweller = this.physics.add.image(760, 325, 'jeweller').setCircle(50, 0, 40).setImmovable(true);
-        const pearlHunter = this.physics.add.image(857, 495, 'pearlHunter').setCircle(50, 30, 50).setImmovable(true);
+        const pearlHunter = this.physics.add.image(850, 505, 'pearlHunter').setCircle(50, 30, 50).setImmovable(true);
 
         this.physics.add.image(40, 80, 'shell');
         this.physics.add.image(40, 110, 'pearl');
