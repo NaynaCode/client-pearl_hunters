@@ -373,6 +373,15 @@ export class Game extends Scene {
                         isMoving = false;
                     }
                 });
+            } else {
+                // Create a new player sprite
+                const newPlayer = this.physics.add.sprite(700, 500, 'player'); // Use default position or sync with server data
+                newPlayer.id = data.id;
+                newPlayer.body.setCollideWorldBounds(true, 1, 1);
+                newPlayer.body.setCircle(10, 20, 35);
+                this.players.add(newPlayer);
+                newPlayer.anims.play('idle', true);
+                socket.emit('requestLeaderboard');
             }
         });
         
