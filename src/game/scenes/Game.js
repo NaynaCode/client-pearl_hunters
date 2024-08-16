@@ -326,62 +326,65 @@ export class Game extends Scene {
         
             
 
-        // Handle player movement updates from the server
-    socket.on('playerMovement', (data) => {
-        console.log('Player movement from server:', data);
-
-        if (!this.players) {
-            console.error('Players group is not initialized');
-            return;
-        }
-
-        let otherPlayer = this.players.getChildren().find(p => p.id === data.id);
-        if (otherPlayer) {
-            // Update position
-            const previousX = otherPlayer.x;
-            const previousY = otherPlayer.y;
-            //otherPlayer.setPosition(data.x, data.y);
-
-            const SPEED = 200; // Speed in pixels per second
-
-            // Calculate the distance between the player and the pointer
-        const distance = Phaser.Math.Distance.Between(previousX, previousY, data.x, data.y);
-
-            // Calculate duration to maintain constant speed
-        const duration = (distance / SPEED) * 1000; // Duration in milliseconds
-
-            // Determine and play animation based on movement direction
-            if (data.x < previousX) {
-                otherPlayer.anims.play('left', true);
-            } else if (data.x > previousX) {
-                otherPlayer.anims.play('right', true);
+        this.socket.on('newPlayer', (data) => {
+            console.log('New player connected:', data.id);
+            // Create a new player sprite
+            const newPlayer = this.physics.add.sprite(100, 100, 'player'); // Use default position or sync with server data
+            newPlayer.id = data.id;
+            newPlayer.body.setCollideWorldBounds(true, 1, 1);
+            newPlayer.body.setCircle(10, 20, 35);
+            this.players.add(newPlayer);
+            newPlayer.anims.play('idle', true);
+            socket.emit('requestLeaderboard');
+        });
+        
+        // Handle player movement
+        this.socket.on('playerMovement', (data) => {
+            console.log('Player movement from server:', data);
+        
+            if (!this.players) {
+                console.error('Players group is not initialized');
+                return;
             }
-
-            this.tweens.add({
-                targets: otherPlayer,
-                x: data.x,
-                y: data.y,
-                duration: duration,
-                ease: 'Linear',
-                onComplete: () => {
-                    otherPlayer.anims.play('idle', true);
-                    isMoving = false; // Allow new movement
+        
+            let otherPlayer = this.players.getChildren().find(p => p.id === data.id);
+            if (otherPlayer) {
+                const previousX = otherPlayer.x;
+                const previousY = otherPlayer.y;
+        
+                const SPEED = 200; // Speed in pixels per second
+                const distance = Phaser.Math.Distance.Between(previousX, previousY, data.x, data.y);
+                const duration = (distance / SPEED) * 1000;
+        
+                if (data.x < previousX) {
+                    otherPlayer.anims.play('left', true);
+                } else if (data.x > previousX) {
+                    otherPlayer.anims.play('right', true);
                 }
+        
+                this.tweens.add({
+                    targets: otherPlayer,
+                    x: data.x,
+                    y: data.y,
+                    duration: duration,
+                    ease: 'Linear',
+                    onComplete: () => {
+                        otherPlayer.anims.play('idle', true);
+                        isMoving = false;
+                    }
+                });
+            }
+        });
+        
+        // Handle player disconnection
+        this.socket.on('playerDisconnected', (data) => {
+            console.log('Player disconnected:', data.id);
+            let disconnectedPlayer = this.players.getChildren().find(p => p.id === data.id);
+            if (disconnectedPlayer) {
+                disconnectedPlayer.destroy(); // Remove the player sprite
+            }
+        });
 
-                // Emit the player's new position after movement
-            
-            });
-
-        } else {
-            // Create a new player if it doesn't exist
-            otherPlayer = this.physics.add.sprite(data.x, data.y, 'player');
-            otherPlayer.id = data.id;
-            otherPlayer.body.setCollideWorldBounds(true, 1, 1);
-            otherPlayer.body.setCircle(10, 20, 35);
-            this.players.add(otherPlayer);
-            otherPlayer.anims.play('idle', true);
-        }
-    });
         // Handle player disconnection
         socket.on('playerDisconnected', (data) => {
             console.log('Player disconnected:', data);
