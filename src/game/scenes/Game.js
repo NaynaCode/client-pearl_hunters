@@ -323,19 +323,20 @@ export class Game extends Scene {
             isMoving = true; // Mark the player as moving
         });
 
+        this.players = this.physics.add.group();
         
-            
+        socket.on('currentPlayers', (players) => {
+            Object.keys(players).forEach((id) => {
+                if (id !== this.socket.id) {
+                    this.addPlayer(players[id]);
+                }
+            });
+        });    
 
-        socket.on('newPlayer', (data) => {
-            console.log('New player connected:', data.id);
-            // Create a new player sprite
-            const newPlayer = this.physics.add.sprite(100, 100, 'player'); // Use default position or sync with server data
-            newPlayer.id = data.id;
-            newPlayer.body.setCollideWorldBounds(true, 1, 1);
-            newPlayer.body.setCircle(10, 20, 35);
-            this.players.add(newPlayer);
-            newPlayer.anims.play('idle', true);
-            socket.emit('requestLeaderboard');
+        socket.on('newPlayer', (playerData) => {
+            const player = this.physics.add.sprite(playerData.x, playerData.y, 'player');
+            player.id = playerData.id;
+            this.players.add(player);
         });
         
         // Handle player movement
@@ -347,6 +348,7 @@ export class Game extends Scene {
                 return;
             }
         
+            // Find the player in the group by their ID
             let otherPlayer = this.players.getChildren().find(p => p.id === data.id);
             if (otherPlayer) {
                 const previousX = otherPlayer.x;
@@ -356,12 +358,14 @@ export class Game extends Scene {
                 const distance = Phaser.Math.Distance.Between(previousX, previousY, data.x, data.y);
                 const duration = (distance / SPEED) * 1000;
         
+                // Determine and play animation based on movement direction
                 if (data.x < previousX) {
                     otherPlayer.anims.play('left', true);
                 } else if (data.x > previousX) {
                     otherPlayer.anims.play('right', true);
                 }
         
+                // Smoothly move the player to the new position
                 this.tweens.add({
                     targets: otherPlayer,
                     x: data.x,
@@ -370,19 +374,22 @@ export class Game extends Scene {
                     ease: 'Linear',
                     onComplete: () => {
                         otherPlayer.anims.play('idle', true);
-                        isMoving = false;
+                        // If you have an isMoving flag or similar, reset it here
+                        // isMoving = false;
                     }
                 });
+            } else {
+                console.warn(`Player with ID ${data.id} not found`);
             }
         });
         
+        
         // Handle player disconnection
-        socket.on('playerDisconnected', (data) => {
-            console.log('Player disconnected:', data.id);
-            let disconnectedPlayer = this.players.getChildren().find(p => p.id === data.id);
-            if (disconnectedPlayer) {
-                disconnectedPlayer.destroy(); // Remove the player sprite
-            }
+        this.socket.on('playerDisconnected', (data) => {
+            const player = this.players.getChildren().find(p => p.id === data.id);
+            if (player) {
+            player.destroy();
+        }
         });
 
         EventBus.emit('current-scene-ready', this);
