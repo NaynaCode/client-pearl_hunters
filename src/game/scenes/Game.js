@@ -326,7 +326,7 @@ export class Game extends Scene {
         
             
 
-        this.socket.on('newPlayer', (data) => {
+        socket.on('newPlayer', (data) => {
             console.log('New player connected:', data.id);
             // Create a new player sprite
             const newPlayer = this.physics.add.sprite(100, 100, 'player'); // Use default position or sync with server data
@@ -339,7 +339,7 @@ export class Game extends Scene {
         });
         
         // Handle player movement
-        this.socket.on('playerMovement', (data) => {
+        socket.on('playerMovement', (data) => {
             console.log('Player movement from server:', data);
         
             if (!this.players) {
@@ -377,20 +377,11 @@ export class Game extends Scene {
         });
         
         // Handle player disconnection
-        this.socket.on('playerDisconnected', (data) => {
+        socket.on('playerDisconnected', (data) => {
             console.log('Player disconnected:', data.id);
             let disconnectedPlayer = this.players.getChildren().find(p => p.id === data.id);
             if (disconnectedPlayer) {
                 disconnectedPlayer.destroy(); // Remove the player sprite
-            }
-        });
-
-        // Handle player disconnection
-        socket.on('playerDisconnected', (data) => {
-            console.log('Player disconnected:', data);
-            const playerToRemove = this.players.getChildren().find(p => p.id === data.id);
-            if (playerToRemove) {
-                playerToRemove.destroy();
             }
         });
 
