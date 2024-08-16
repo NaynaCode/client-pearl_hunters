@@ -329,7 +329,7 @@ export class Game extends Scene {
         socket.on('newPlayer', (data) => {
             console.log('New player connected:', data.id);
             // Create a new player sprite
-            const newPlayer = this.physics.add.sprite(100, 100, 'player'); // Use default position or sync with server data
+            const newPlayer = this.physics.add.sprite(700, 500, 'player'); // Use default position or sync with server data
             newPlayer.id = data.id;
             newPlayer.body.setCollideWorldBounds(true, 1, 1);
             newPlayer.body.setCircle(10, 20, 35);
