@@ -385,7 +385,7 @@ export class Game extends Scene {
         
         
         // Handle player disconnection
-        this.socket.on('playerDisconnected', (data) => {
+        socket.on('playerDisconnected', (data) => {
             const player = this.players.getChildren().find(p => p.id === data.id);
             if (player) {
             player.destroy();
