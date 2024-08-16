@@ -32,7 +32,7 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
 
-        this.load.spritesheet('player', 'cikica.png', { frameWidth: 60, frameHeight: 60 });
+        this.load.spritesheet('player', 'cikica2.png', { frameWidth: 60, frameHeight: 60 });
         this.load.spritesheet('no-zone', 'nono.PNG', { frameWidth: 1456, frameHeight: 816 });
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
