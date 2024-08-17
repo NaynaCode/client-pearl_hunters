@@ -9,12 +9,14 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://pearl-hunters-server.onrender.com'); // Connect to the server
+        const socket = io('http://localhost:3000'); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
 
         this.add.image(1070, 130, 'leaderboard').setScale(1.5);
+
+        this.timerText = this.add.text(600, 30, `Time: 0:00`, { fontSize: '24px', fill: '#fff' });
 
         // Retrieve the username from local storage
         const username = localStorage.getItem('playerUsername');
@@ -82,7 +84,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post('https://pearl-hunters-server.onrender.com/userData', { username })
+        axios.post('http://localhost:3000/userData', { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
@@ -382,6 +384,26 @@ export class Game extends Scene {
                 socket.emit('requestLeaderboard');
             }
         });
+
+        // Listen for the 'timerUpdate' event from the server
+        socket.on('timerUpdate', (time) => {
+            // Update the timer text with the synchronized time
+            this.timerText.setText(`Time: ${this.formatTime(time)}`);
+        });
+
+        socket.on('resetAndChangeScene', (winner) => {
+            socket.emit('requestLeaderboard');
+            seaShellsText.setText('0/10'); 
+            pearlsText.setText('0'); 
+            necklacesText.setText('0'); 
+            coinsText.setText('0'); 
+            this.scene.pause();
+            this.showTransitionScene(winner);
+             // Show the transition scene for 5 seconds
+             setTimeout(() => {
+                this.scene.resume(); // Resume the current scene after 5 seconds
+            }, 5000);
+        });
         
         // Handle player disconnection
         socket.on('playerDisconnected', (data) => {
@@ -395,7 +417,46 @@ export class Game extends Scene {
         EventBus.emit('current-scene-ready', this);
     }
 
-    changeScene() {
-        this.scene.start('GameOver');
+    showTransitionScene(winner) {
+        const overlay = this.add.rectangle(
+            this.cameras.main.width / 2,   // X position (centered)
+            this.cameras.main.height / 2,  // Y position (centered)
+            this.cameras.main.width,       // Width (full screen)
+            this.cameras.main.height,      // Height (full screen)
+            0xffa500                      // Orange color (hex code)
+        );
+        overlay.setAlpha(0.5); // Set the transparency (0.5 = 50% transparent)
+        // Implement your scene transition logic here
+        const transitionText = this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2,
+            'Round Over! Resetting...',
+            { fontSize: '48px', fill: '#fff' }
+        );
+        transitionText.setOrigin(0.5);
+
+        const winnerText = this.add.text(
+            this.cameras.main.width / 2,
+            this.cameras.main.height / 2 + 30,
+            `Winner: ${winner.username}`,
+            { fontSize: '48px', fill: '#fff' }
+        );
+        winnerText.setOrigin(0.5);
+        
+        // Optional: Fade out the text after 5 seconds
+        this.tweens.add({
+            targets: [transitionText, winnerText, overlay],
+            alpha: 0,
+            duration: 1000,
+            delay: 0,
+            onComplete: () => transitionText.destroy()
+        });
+    }
+
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const partInSeconds = seconds % 60;
+        const formattedSeconds = partInSeconds < 10 ? `0${partInSeconds}` : partInSeconds;
+        return `${minutes}:${formattedSeconds}`;
     }
 }
