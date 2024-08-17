@@ -431,15 +431,15 @@ export class Game extends Scene {
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
             'Round Over! Resetting...',
-            { fontSize: '48px', fill: '#fff' }
+            { fontSize: '24px', fill: '#fff' }
         );
         transitionText.setOrigin(0.5);
 
         const winnerText = this.add.text(
             this.cameras.main.width / 2,
-            this.cameras.main.height / 2 + 30,
+            this.cameras.main.height / 2 + 50,
             `Winner: ${winner.username}`,
-            { fontSize: '48px', fill: '#fff' }
+            { fontSize: '32px', fill: '#fff' }
         );
         winnerText.setOrigin(0.5);
         
