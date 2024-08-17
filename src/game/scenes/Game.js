@@ -9,7 +9,7 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://pearl-hunters-server.onrender.com'); // Connect to the server
+        const socket = io('http://localhost:3000'); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
@@ -54,7 +54,7 @@ export class Game extends Scene {
 
         const market = this.physics.add.image(323, 360, 'market').setCircle(30, 20, 40).setImmovable(true);
         const jeweller = this.physics.add.image(760, 325, 'jeweller').setCircle(50, 0, 40).setImmovable(true);
-        const pearlHunter = this.physics.add.image(850, 505, 'pearlHunter').setCircle(50, 30, 50).setImmovable(true);
+        const pearlHunter = this.physics.add.image(857, 495, 'pearlHunter').setCircle(50, 0, 20).setImmovable(true);
 
         this.physics.add.image(40, 80, 'shell');
         this.physics.add.image(40, 110, 'pearl');
@@ -82,7 +82,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post('https://pearl-hunters-server.onrender.com/userData', { username })
+        axios.post('http://localhost:3000/userData', { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
@@ -133,10 +133,10 @@ export class Game extends Scene {
         };
         
         const updateCoins = () => {
-            if (necklaces > 1) {
-                coins += 200;
+            if (necklaces > 0) {
+                coins += 100 * necklaces;
                 coinsText.setText(coins);
-                necklaces -= 2;
+                necklaces = 0;
                 necklacesText.setText(necklaces);
 
                 const username = localStorage.getItem('playerUsername');
@@ -160,15 +160,17 @@ export class Game extends Scene {
                 leaderboardText.forEach(text => text.destroy());
                 leaderboardText.length = 0; // Reset the array
 
-                this.add.text(1000, 30, 'Leaderboard:', { fontSize: '20px', fill: '#000' });
-                this.add.text(1000, 50, '(user - coins)', { fontSize: '16px', fill: '#000' });
+                this.add.text(1000, 35, 'Leaderboard:', { fontSize: '20px', fill: '#000' });
 
                 users.forEach((user, index) => {
-                    const rank = index + 1;
-                    const userText = `${rank}. ${user.username} - ${user.coins}`;
-                    const text = this.add.text(1000, 90 + index * 30, userText, { fontSize: '16px', fill: '#000' });
-                    leaderboardText.push(text);
+                    if (index < 5) {
+                        const rank = index + 1;
+                        const userText = `${rank}. ${user.username} - ${user.coins}`;
+                        const text = this.add.text(1000, 95 + index * 30, userText, { fontSize: '16px', fill: '#000' });
+                        leaderboardText.push(text);
+                    }
                 });
+                
             }
         });
 
@@ -261,19 +263,14 @@ export class Game extends Scene {
         });
 
         this.physics.add.collider(player, seashells, (player, seashell) => {
-            console.log('Collision detected');
-            // Hide and deactivate the seashell on collision
-            if (seaShells<10){
+            if (seashell.active && seaShells<10) {
+                console.log('Collision detected');
                 seashell.setActive(false);
                 seashell.setVisible(false);
-            } else {
-
-            }
-            // **Enhancement: Update seaShells**
-            if (collisionCounter>0)
                 updateSeaShells();
-            collisionCounter = 0;
+            }
         });
+        
 
         this.physics.add.collider(player, pearlHunter, () => {
             updatePearls();
@@ -285,6 +282,7 @@ export class Game extends Scene {
 
         this.physics.add.collider(player, market, () => {
             updateCoins();
+            
         }); 
 
         this.input.on('pointerdown', (pointer) => {
