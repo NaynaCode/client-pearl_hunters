@@ -66,7 +66,7 @@ export class MainMenu extends Scene {
 
                 if (username) {
                     // Make a POST request to the server to add the username
-                    axios.post(`${process.env.SERVER_KEY}/users/register`, { username })
+                    axios.post(`https://server-pearl-hunters.onrender.com/api/players/users/register`, { username })
                         .then(response => {
                             // Store the username in local storage upon successful registration
                             localStorage.setItem('playerUsername', username);
@@ -93,7 +93,7 @@ export class MainMenu extends Scene {
 
     createStartButton(storedUsername) {
         // Send the stored username to the server to check its status
-        axios.post(`${process.env.SERVER_KEY}/users/login`, { username: storedUsername })
+        axios.post(`https://server-pearl-hunters.onrender.com/api/players/users/login`, { username: storedUsername })
             .then(response => {
                 alert(response.data.message); // Display the welcome message
                 this.scene.start('Game');
