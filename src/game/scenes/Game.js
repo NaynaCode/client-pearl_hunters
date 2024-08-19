@@ -9,10 +9,17 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://pearl-hunters-server.onrender.com'); // Connect to the server
+        const socket = io(`${process.env.SERVER_KEY}`); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
+
+        this.backgroundWaves = this.sound.add('wave', { loop: true });
+        this.backgroundWaves.setVolume(0.5);
+        this.backgroundWaves.play();
+
+        this.collectSound = this.sound.add('collect');
+        this.collectSound.setVolume(0.3);
 
         this.add.image(1070, 130, 'leaderboard').setScale(1.5);
 
@@ -84,7 +91,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post('https://pearl-hunters-server.onrender.com/userData', { username })
+        axios.post(`${process.env.SERVER_KEY}/userData`, { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
@@ -267,6 +274,7 @@ export class Game extends Scene {
         this.physics.add.collider(player, seashells, (player, seashell) => {
             if (seashell.active && seaShells<10) {
                 console.log('Collision detected');
+                this.collectSound.play();
                 seashell.setActive(false);
                 seashell.setVisible(false);
                 updateSeaShells();
@@ -393,6 +401,10 @@ export class Game extends Scene {
 
         socket.on('resetAndChangeScene', (winner) => {
             socket.emit('requestLeaderboard');
+            seaShells = 0;
+            pearls = 0;
+            necklaces = 0;
+            coins = 0;
             seaShellsText.setText('0/10'); 
             pearlsText.setText('0'); 
             necklacesText.setText('0'); 

@@ -189,3 +189,5 @@ Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, 
 The Phaser logo and characters are &copy; 2011 - 2024 Phaser Studio Inc.
 
 All rights reserved.
+#   c l i e n t - p e a r l _ h u n t e r s  
+ 

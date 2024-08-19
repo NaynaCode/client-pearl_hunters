@@ -49,6 +49,9 @@ export class Preloader extends Scene
         this.load.image('coin', 'coin.png');
         this.load.image('blured', 'bgBlur.png');
         this.load.image('leaderboard', 'leaderboard.png');
+
+        this.load.audio('collect', 'collect.wav');
+        this.load.audio('wave', 'wave.wav');
     }
 
     create ()
