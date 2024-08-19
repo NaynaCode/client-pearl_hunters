@@ -9,7 +9,7 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io(`${process.env.SERVER_KEY}`); // Connect to the server
+        const socket = io('https://server-pearl-hunters.onrender.com'); // Connect to the server
 
         this.cameras.main.setBackgroundColor(0x00ff00);
         this.add.image(512, 384, 'background');
@@ -91,7 +91,7 @@ export class Game extends Scene {
         let coins;
         let seaShellsText, pearlsText, necklacesText, coinsText;
         
-        axios.post(`${process.env.SERVER_KEY}/userData`, { username })
+        axios.post(`https://server-pearl-hunters.onrender.com/userData`, { username })
             .then(response => {
                 // Extract the user data from the response
                 const userData = response.data.user;
