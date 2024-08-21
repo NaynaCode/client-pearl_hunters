@@ -1,0 +1,83 @@
+{
+	"textures": [
+		{
+			"image": "wave.png",
+			"format": "RGBA8888",
+			"size": {
+				"w": 1371,
+				"h": 1189
+			},
+			"scale": 1,
+			"frames": [
+				{
+					"filename": "wave-frame-1.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 1352,
+						"h": 406
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 1352,
+						"h": 406
+					},
+					"frame": {
+						"x": 0,
+						"y": 0,
+						"w": 1352,
+						"h": 406
+					}
+				},
+				{
+					"filename": "wave-frame-2.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 1371,
+						"h": 399
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 1371,
+						"h": 399
+					},
+					"frame": {
+						"x": 0,
+						"y": 406,
+						"w": 1371,
+						"h": 399
+					}
+				},
+				{
+					"filename": "wave-frame-3.png",
+					"rotated": false,
+					"trimmed": false,
+					"sourceSize": {
+						"w": 1366,
+						"h": 384
+					},
+					"spriteSourceSize": {
+						"x": 0,
+						"y": 0,
+						"w": 1366,
+						"h": 384
+					},
+					"frame": {
+						"x": 0,
+						"y": 805,
+						"w": 1366,
+						"h": 384
+					}
+				}
+			]
+		}
+	],
+	"meta": {
+		"app": "https://www.codeandweb.com/texturepacker",
+		"version": "3.0",
+		"smartupdate": "$TexturePacker:SmartUpdate:da829ae4ae5d70bdc5f7cf1b6fd3378b:7ae6a3b1bbe728f0eb83295d762f60a2:25d74c8caba82fcc8f7e3d9bae677393$"
+	}
+}

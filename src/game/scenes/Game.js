@@ -25,6 +25,8 @@ export class Game extends Scene {
 
         this.timerText = this.add.text(600, 30, `Time: 0:00`, { fontSize: '24px', fill: '#fff' });
 
+        
+
         // Retrieve the username from local storage
         const username = localStorage.getItem('playerUsername');
         socket.emit('requestLeaderboard');
@@ -186,7 +188,7 @@ export class Game extends Scene {
         // Function to spawn a seashell at a random position
         function spawnSeashell() {
             const h = 500; // X center of the oval
-            const k = 680; // Y center of the oval
+            const k = 660; // Y center of the oval
             const a = 250; // Horizontal radius (semi-major axis)
             const b = 50; // Vertical radius (semi-minor axis)
 
@@ -231,6 +233,16 @@ export class Game extends Scene {
             callbackScope: this,
             loop: true
         });
+
+        const waveS = this.physics.add.sprite(500, 670, 'waveS');
+        waveS.setScale(1.7).setAlpha(0.5);
+        this.anims.create({
+            key: 'waveAnimation',
+            frames: this.anims.generateFrameNumbers('waveS', { start: 0, end: 2 }),
+            frameRate: 1.5,
+            repeat: -1,
+        });
+        waveS.play('waveAnimation');
 
         const player = this.physics.add.sprite(700, 500, 'player');
         player.body.setCollideWorldBounds(true, 1, 1);
@@ -329,10 +341,7 @@ export class Game extends Scene {
             
             });
             isMoving = true; // Mark the player as moving
-        });
-
-        
-            
+        }); 
 
         socket.on('newPlayer', (data) => {
             console.log('New player connected:', data.id);

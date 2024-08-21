@@ -49,6 +49,8 @@ export class Preloader extends Scene
 
         this.load.audio('collect', 'collect.wav');
         this.load.audio('wave', 'wave.wav');
+
+        this.load.spritesheet('waveS', 'wave-sprite.png', { frameWidth: 400, frameHeight: 100 });
     }
 
     create ()
