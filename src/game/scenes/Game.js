@@ -234,7 +234,7 @@ export class Game extends Scene {
             loop: true
         });
 
-        const waveS = this.physics.add.sprite(500, 670, 'waveS');
+        const waveS = this.physics.add.sprite(500, 680, 'waveS');
         waveS.setScale(1.7).setAlpha(0.5);
         this.anims.create({
             key: 'waveAnimation',
@@ -409,6 +409,13 @@ export class Game extends Scene {
         });
 
         socket.on('resetAndChangeScene', (winner) => {
+            this.scene.pause();
+            this.showTransitionScene(winner);
+             // Show the transition scene for 5 seconds
+             setTimeout(() => {
+                this.scene.resume(); // Resume the current scene after 5 seconds
+            }, 5000);
+            
             socket.emit('requestLeaderboard');
             seaShells = 0;
             pearls = 0;
@@ -418,12 +425,7 @@ export class Game extends Scene {
             pearlsText.setText('0'); 
             necklacesText.setText('0'); 
             coinsText.setText('0'); 
-            this.scene.pause();
-            this.showTransitionScene(winner);
-             // Show the transition scene for 5 seconds
-             setTimeout(() => {
-                this.scene.resume(); // Resume the current scene after 5 seconds
-            }, 5000);
+            
         });
         
         // Handle player disconnection
