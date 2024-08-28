@@ -9,9 +9,9 @@ export class Game extends Scene {
     }
 
     create() {
-        const socket = io('https://server-pearl-hunters.onrender.com'); // Connect to the server
+        const socket = io('https://server-pearl-hunters.onrender.com'); 
 
-        this.cameras.main.setBackgroundColor(0x00ff00);
+        this.cameras.main.setBackgroundColor(0x000000);
         this.add.image(512, 384, 'background');
 
         this.backgroundWaves = this.sound.add('wave', { loop: true });
@@ -22,26 +22,19 @@ export class Game extends Scene {
         this.collectSound.setVolume(0.3);
 
         this.add.image(1070, 130, 'leaderboard').setScale(1.5);
-
-        this.timerText = this.add.text(600, 30, `Time: 0:00`, { fontSize: '24px', fill: '#fff' });
-
-        
-
-        // Retrieve the username from local storage
-        const username = localStorage.getItem('playerUsername');
         socket.emit('requestLeaderboard');
+        const leaderboardText = [];
 
-        // Display the username at the top-left corner of the screen
+        this.timerText = this.add.text(550, 30, `Time: 0:00`, { fontSize: '24px', fill: '#fff' });
+
+        const username = localStorage.getItem('playerUsername');
+
         this.add.text(30, 35, `Player: ${username}`, {
             fontSize: '24px',
             fill: '#FFF',
             align: 'left'
         });
 
-        // Create a player group
-        this.players = this.physics.add.group(); // To keep track of all players
-
-        var collisionCounter = 1;
 
         const transparentImages = this.physics.add.staticGroup();
 
@@ -72,13 +65,15 @@ export class Game extends Scene {
         this.physics.add.image(40, 140, 'necklace');
         this.physics.add.image(40, 170, 'coin');
 
-        // Create a group for seashells
+        var collisionCounter = 1;
+        
+        this.players = this.physics.add.group(); 
+
         const seashells = this.physics.add.group({
-            key: ['shell1', 'shell2', 'shell3'], // Array of keys for different seashell sprites
-            repeat: 1, // Number of seashells to create
-            //setScale: { x: 0.5, y: 0.5 }, // Optional scaling
-            visible: false, // Start invisible to use pool
-            active: false // Start inactive
+            key: ['shell1', 'shell2', 'shell3'], 
+            repeat: 1, 
+            visible: false, 
+            active: false 
         });
 
         seashells.children.iterate((seashell) => {
@@ -86,7 +81,55 @@ export class Game extends Scene {
             seashell.body.setCollideWorldBounds(true, 1, 1);
         });
 
-        // **Enhancement: seaShells System**
+        function spawnSeashell() {
+            const h = 500; 
+            const k = 660;
+            const a = 250; 
+            const b = 50;
+
+            const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+            const radius = Math.sqrt(Phaser.Math.FloatBetween(0, 1)); 
+
+            const x = h + radius * a * Math.cos(angle);
+            const y = k + radius * b * Math.sin(angle);
+
+            const seashell = seashells.getFirstDead(false, x, y);
+
+            if (seashell) {
+                if (collisionCounter < 1)
+                    collisionCounter = 1;
+
+                seashell.setActive(true);
+                seashell.setVisible(true);
+
+                const textures = ['shell1', 'shell2', 'shell3'];
+                const texture = Phaser.Utils.Array.GetRandom(textures);
+                seashell.setTexture(texture);
+
+                seashell.setPosition(x, y);
+                seashell.setCircle(10); 
+            }
+        }
+
+        this.time.addEvent({
+            delay: Phaser.Math.Between(500, 600), 
+            callback: spawnSeashell,
+            callbackScope: this,
+            loop: true
+        });
+
+        const waveS = this.physics.add.sprite(500, 680, 'waveS');
+        waveS.setScale(1.7).setAlpha(0.5);
+        this.anims.create({
+            key: 'waveAnimation',
+            frames: this.anims.generateFrameNumbers('waveS', { start: 0, end: 2 }),
+            frameRate: 1.5,
+            repeat: -1,
+        });
+        waveS.play('waveAnimation');
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
         let seaShells;
         let pearls;
         let necklaces;
@@ -95,14 +138,12 @@ export class Game extends Scene {
         
         axios.post(`https://server-pearl-hunters.onrender.com/userData`, { username })
             .then(response => {
-                // Extract the user data from the response
                 const userData = response.data.user;
                 seaShells = userData.shells;
                 pearls = userData.pearls;
                 necklaces = userData.necklaces;
                 coins = userData.coins;
         
-                // Initialize the text objects with the fetched data
                 seaShellsText = this.add.text(70, 70, seaShells + '/10', { fontSize: '24px', fill: '#FFF' });
                 pearlsText = this.add.text(70, 100, pearls, { fontSize: '24px', fill: '#FFF' });
                 necklacesText = this.add.text(70, 130, necklaces, { fontSize: '24px', fill: '#FFF' });
@@ -111,11 +152,12 @@ export class Game extends Scene {
             .catch(error => {
                 alert('Error fetching user data: ' + error);
             });
-        
+    
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
         const updateSeaShells = () => {
             if (seaShells<10) {
-                seaShells += 1; // Or any value you want
+                seaShells += 1;
                 seaShellsText.setText(seaShells + '/10');
 
                 const username = localStorage.getItem('playerUsername');
@@ -153,96 +195,10 @@ export class Game extends Scene {
                 const username = localStorage.getItem('playerUsername');
                 socket.emit('updateCoins', { username, necklaces, coins});
                 socket.emit('requestLeaderboard');
-
-        // Listen for the leaderboard data from the server
-        
             }    
         }
 
-        const leaderboardText = [];
-
-        socket.on('leaderboardData', (response) => {
-            if (response.error) {
-                alert('Error fetching leaderboard data: ' + response.error);
-            } else {
-                const users = response.users;
-
-                // Clear the previous leaderboard display
-                leaderboardText.forEach(text => text.destroy());
-                leaderboardText.length = 0; // Reset the array
-
-                this.add.text(1000, 35, 'Leaderboard:', { fontSize: '20px', fill: '#000' });
-
-                users.forEach((user, index) => {
-                    if (index < 5) {
-                        const rank = index + 1;
-                        const userText = `${rank}. ${user.username} - ${user.coins}`;
-                        const text = this.add.text(1000, 95 + index * 30, userText, { fontSize: '16px', fill: '#000' });
-                        leaderboardText.push(text);
-                    }
-                });
-                
-            }
-        });
-
-        // Function to spawn a seashell at a random position
-        function spawnSeashell() {
-            const h = 500; // X center of the oval
-            const k = 660; // Y center of the oval
-            const a = 250; // Horizontal radius (semi-major axis)
-            const b = 50; // Vertical radius (semi-minor axis)
-
-
-            // Generate a random angle and radius
-            const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-            const radius = Math.sqrt(Phaser.Math.FloatBetween(0, 1)); // Normalize distance
-
-
-            // Calculate the position within the oval
-            const x = h + radius * a * Math.cos(angle);
-            const y = k + radius * b * Math.sin(angle);
-
-            // Get a random seashell from the pool
-            const seashell = seashells.getFirstDead(false, x, y);
-
-            if (seashell) {
-                if (collisionCounter < 1)
-                    collisionCounter = 1;
-
-                seashell.setActive(true);
-                seashell.setVisible(true);
-
-                // Randomly select a texture from the array
-                const textures = ['shell1', 'shell2', 'shell3'];
-                const texture = Phaser.Utils.Array.GetRandom(textures);
-                seashell.setTexture(texture);
-
-                // Set a random position within the game bounds
-                seashell.setPosition(x, y);
-                seashell.setCircle(10); // Set circle physics
-
-
-                // You can also add any other properties or animations here if needed
-            }
-        }
-
-        // Timer event to spawn seashells at random intervals
-        this.time.addEvent({
-            delay: Phaser.Math.Between(500, 600), // Random interval between spawns
-            callback: spawnSeashell,
-            callbackScope: this,
-            loop: true
-        });
-
-        const waveS = this.physics.add.sprite(500, 680, 'waveS');
-        waveS.setScale(1.7).setAlpha(0.5);
-        this.anims.create({
-            key: 'waveAnimation',
-            frames: this.anims.generateFrameNumbers('waveS', { start: 0, end: 2 }),
-            frameRate: 1.5,
-            repeat: -1,
-        });
-        waveS.play('waveAnimation');
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
         const player = this.physics.add.sprite(700, 500, 'player');
         player.body.setCollideWorldBounds(true, 1, 1);
@@ -271,11 +227,40 @@ export class Game extends Scene {
 
         player.anims.play('idle', true);
 
-        let isMoving = false; // Track whether the player is moving
+        let isMoving = false;
 
-        // Add collision between player and transparent image
+        this.input.on('pointerdown', (pointer) => {
+            if (isMoving) return; 
+            const SPEED = 200; 
+
+            const distance = Phaser.Math.Distance.Between(player.x, player.y, pointer.x, pointer.y);
+
+            const duration = (distance / SPEED) * 1000; 
+
+            if (pointer.x < player.x) {
+                player.anims.play('left', true);
+            } else if (pointer.x > player.x) {
+                player.anims.play('right', true);
+            }
+
+            this.tweens.add({
+                targets: player,
+                x: pointer.x,
+                y: pointer.y,
+                duration: duration,
+                ease: 'Linear',
+                onComplete: () => {
+                    player.anims.play('idle', true);
+                    isMoving = false; 
+                    socket.emit('playerMovement', { x: player.x, y: player.y });
+                }
+            });
+            isMoving = true; 
+        }); 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
         this.physics.add.collider(player, transparentImages, () => {
-            // Stop the player's tween movement on collision
             if (isMoving) {
                 this.tweens.killTweensOf(player);
                 player.anims.play('idle', true);
@@ -292,7 +277,6 @@ export class Game extends Scene {
                 updateSeaShells();
             }
         });
-        
 
         this.physics.add.collider(player, pearlHunter, () => {
             updatePearls();
@@ -307,46 +291,34 @@ export class Game extends Scene {
             
         }); 
 
-        this.input.on('pointerdown', (pointer) => {
-            if (isMoving) return;  //Prevent new movement if already moving
-            const SPEED = 200; // Speed in pixels per second
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            // Calculate the distance between the player and the pointer
-            const distance = Phaser.Math.Distance.Between(player.x, player.y, pointer.x, pointer.y);
+        socket.on('leaderboardData', (response) => {
+            if (response.error) {
+                alert('Error fetching leaderboard data: ' + response.error);
+            } else {
+                const users = response.users;
 
-            // Calculate duration to maintain constant speed
-            const duration = (distance / SPEED) * 1000; // Duration in milliseconds
+                leaderboardText.forEach(text => text.destroy());
+                leaderboardText.length = 0;
 
-            // Determine animation based on pointer position
-            if (pointer.x < player.x) {
-                player.anims.play('left', true);
-            } else if (pointer.x > player.x) {
-                player.anims.play('right', true);
+                this.add.text(1000, 35, 'Leaderboard:', { fontSize: '20px', fill: '#000' });
+
+                users.forEach((user, index) => {
+                    if (index < 5) {
+                        const rank = index + 1;
+                        const userText = `${rank}. ${user.username} - ${user.coins}`;
+                        const text = this.add.text(1000, 90 + index * 30, userText, { fontSize: '16px', fill: '#000' });
+                        leaderboardText.push(text);
+                    }
+                });
+                
             }
-
-            // Tween the player's position to the pointer's position
-            this.tweens.add({
-                targets: player,
-                x: pointer.x,
-                y: pointer.y,
-                duration: duration,
-                ease: 'Linear',
-                onComplete: () => {
-                    player.anims.play('idle', true);
-                    isMoving = false; // Allow new movement
-                    socket.emit('playerMovement', { x: player.x, y: player.y });
-                }
-
-                // Emit the player's new position after movement
-            
-            });
-            isMoving = true; // Mark the player as moving
-        }); 
+        });
 
         socket.on('newPlayer', (data) => {
             console.log('New player connected:', data.id);
-            // Create a new player sprite
-            const newPlayer = this.physics.add.sprite(700, 500, 'player'); // Use default position or sync with server data
+            const newPlayer = this.physics.add.sprite(700, 500, 'player'); 
             newPlayer.id = data.id;
             newPlayer.body.setCollideWorldBounds(true, 1, 1);
             newPlayer.body.setCircle(10, 20, 35);
@@ -355,7 +327,6 @@ export class Game extends Scene {
             socket.emit('requestLeaderboard');
         });
         
-        // Handle player movement
         socket.on('playerMovement', (data) => {
             console.log('Player movement from server:', data);
         
@@ -369,7 +340,7 @@ export class Game extends Scene {
                 const previousX = otherPlayer.x;
                 const previousY = otherPlayer.y;
         
-                const SPEED = 200; // Speed in pixels per second
+                const SPEED = 200; 
                 const distance = Phaser.Math.Distance.Between(previousX, previousY, data.x, data.y);
                 const duration = (distance / SPEED) * 1000;
         
@@ -391,8 +362,7 @@ export class Game extends Scene {
                     }
                 });
             } else {
-                // Create a new player sprite
-                const newPlayer = this.physics.add.sprite(700, 500, 'player'); // Use default position or sync with server data
+                const newPlayer = this.physics.add.sprite(700, 500, 'player'); 
                 newPlayer.id = data.id;
                 newPlayer.body.setCollideWorldBounds(true, 1, 1);
                 newPlayer.body.setCircle(10, 20, 35);
@@ -402,18 +372,15 @@ export class Game extends Scene {
             }
         });
 
-        // Listen for the 'timerUpdate' event from the server
         socket.on('timerUpdate', (time) => {
-            // Update the timer text with the synchronized time
             this.timerText.setText(`Time: ${this.formatTime(time)}`);
         });
 
         socket.on('resetAndChangeScene', (winner) => {
             this.scene.pause();
             this.showTransitionScene(winner);
-             // Show the transition scene for 5 seconds
              setTimeout(() => {
-                this.scene.resume(); // Resume the current scene after 5 seconds
+                this.scene.resume(); 
             }, 5000);
             
             socket.emit('requestLeaderboard');
@@ -428,28 +395,29 @@ export class Game extends Scene {
             
         });
         
-        // Handle player disconnection
         socket.on('playerDisconnected', (data) => {
             console.log('Player disconnected:', data.id);
             let disconnectedPlayer = this.players.getChildren().find(p => p.id === data.id);
             if (disconnectedPlayer) {
-                disconnectedPlayer.destroy(); // Remove the player sprite
+                disconnectedPlayer.destroy(); 
             }
         });
 
         EventBus.emit('current-scene-ready', this);
     }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
     showTransitionScene(winner) {
         const overlay = this.add.rectangle(
-            this.cameras.main.width / 2,   // X position (centered)
-            this.cameras.main.height / 2,  // Y position (centered)
-            this.cameras.main.width,       // Width (full screen)
-            this.cameras.main.height,      // Height (full screen)
-            0xffa500                      // Orange color (hex code)
+            this.cameras.main.width / 2,   
+            this.cameras.main.height / 2,  
+            this.cameras.main.width,      
+            this.cameras.main.height,      
+            0xffa500                      
         );
-        overlay.setAlpha(0.5); // Set the transparency (0.5 = 50% transparent)
-        // Implement your scene transition logic here
+        overlay.setAlpha(0.5); 
         const transitionText = this.add.text(
             this.cameras.main.width / 2,
             this.cameras.main.height / 2,
@@ -466,7 +434,6 @@ export class Game extends Scene {
         );
         winnerText.setOrigin(0.5);
         
-        // Optional: Fade out the text after 5 seconds
         this.tweens.add({
             targets: [transitionText, winnerText, overlay],
             alpha: 0,
